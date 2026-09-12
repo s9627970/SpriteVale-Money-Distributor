@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>打團分錢計算器 v2.5 多團版 (PaddleOCR版)</title>
+<meta name="theme-color" content="#0b1220" />
+<style>
+:root{
+  --bg:#0a111d;--panel:#172233;--panel2:#111b2c;--line:#28384d;--text:#f1f5f9;
+  --muted:#8190a8;--green:#16c79a;--green2:#0c8b70;--blue:#57a3ff;--yellow:#f5b51b;
+  --red:#ff5c7a;--cyan:#45d4cf;--shadow:0 14px 40px rgba(0,0,0,.22);--radius:17px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+.topbar{height:100px;border-bottom:1px solid #202c3e;background:#0f1827;display:flex;align-items:center;justify-content:space-between;padding:0 26px;gap:16px;position:sticky;top:0;z-index:20}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#1ed0a3,#08a37d);display:grid;place-items:center;font-weight:900;box-shadow:0 8px 24px rgba(22,199,154,.2)}
+.title-wrap{line-height:1.15}
+.title{font-size:18px;font-weight:900;display:flex;gap:8px;align-items:center}
+.badge{font-size:11px;border:1px solid #178d76;color:#39d9b0;border-radius:7px;padding:3px 6px}
+.subtitle{font-size:12px;color:#7e8ba1;margin-top:4px}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid #33465e;background:#192438;color:#e9eef6;border-radius:9px;padding:8px 12px;font-weight:700}
+.btn:hover{filter:brightness(1.12)}
+.btn.primary{background:#069d7a;border-color:#08a986;color:#fff;box-shadow:0 7px 18px rgba(0,157,122,.2)}
+.btn.blue{border-color:#315f8e;background:#17283e}
+.btn.ghost{background:transparent}
+.btn.danger{border-color:#5d3140;color:#ff9aac;background:#261622}
+.roundbar{height:46px;border-bottom:1px solid #202c3e;background:#0d1624;display:flex;align-items:center;padding:0 26px;gap:8px;overflow:auto}
+.round{border:1px solid #213148;background:#152137;color:#aeb9ca;border-radius:16px;padding:6px 13px;font-size:12px;white-space:nowrap}
+.round.active{color:#64e7c0;border-color:#087b68;background:#122a2b}
+.round .count{font-size:10px;padding:1px 6px;border-radius:10px;background:#0d182a;margin-left:4px}
+.container{padding:24px 26px 35px;max-width:1500px;margin:auto}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px 16px;box-shadow:var(--shadow);min-height:116px;position:relative}
+.card .label{font-size:13px;color:#b3bdcc}
+.card .value{font-size:27px;font-weight:900;margin-top:10px;letter-spacing:.3px}
+.card .note{font-size:11px;color:#6f7d92;margin-top:6px}
+.card .icon{position:absolute;right:16px;top:16px;opacity:.65}
+.card.fee .value{color:#ffbf2f}.card.net .value{color:#64a8ff}.card.per .value{color:#35d6a5}
+.card.per{border-color:#197f6a}
+.main-grid{display:grid;grid-template-columns:minmax(420px,.92fr) minmax(560px,1.25fr);gap:22px}
+.left-col,.right-col{display:flex;flex-direction:column;gap:22px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:17px}
+.panel-title{display:flex;align-items:center;gap:9px;font-weight:900;font-size:17px}
+.panel-title .dot{color:var(--green)}
+.panel-sub{font-size:11px;color:#7c899d}
+.form-row{display:flex;gap:8px}
+input,textarea{width:100%;border:1px solid #33445d;background:#0f192a;color:#eef4fb;border-radius:9px;padding:10px 12px;outline:none}
+input:focus,textarea:focus{border-color:#2bc4a2;box-shadow:0 0 0 3px rgba(43,196,162,.1)}
+.item-list{display:flex;flex-direction:column;gap:7px;margin-top:14px}
+.item-row{display:grid;grid-template-columns:26px 1fr auto auto;gap:8px;align-items:center;background:#111c2e;border:1px solid #1c2b40;border-radius:10px;padding:9px 10px}
+.item-index{color:#748399;font-size:12px}
+.item-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item-price{font-weight:800;color:#48d8b1}
+.icon-btn{border:0;background:transparent;color:#68768a;padding:5px;border-radius:7px}
+.icon-btn:hover{background:#213148;color:#fff}
+.breakdown{background:#111c2e;border:1px solid #213047;border-radius:11px;margin-top:15px;padding:12px}
+.line{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#c1cad8}.line strong{color:#ecf2fa}
+.line.fee strong{color:#ffc12b}.line.net{border-top:1px solid #27364b;padding-top:10px;margin-top:4px}.line.net strong{color:#18d0a2}
+.cost-note{font-size:11px;color:#6e7d93;margin-top:9px}
+.member-toolbar{display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-bottom:14px}
+.progress-box{background:#111c2e;border:1px solid #1f3048;border-radius:12px;padding:12px;margin-bottom:12px}
+.progress-top{display:flex;justify-content:space-between;font-size:12px}.progress-top strong{color:#fff}.progress-top .remain{color:#e8c52b}
+.bar{height:9px;border-radius:99px;background:#223049;margin-top:10px;overflow:hidden}.bar > span{display:block;height:100%;background:linear-gradient(90deg,#0ebc97,#2fd6bf);border-radius:99px}
+.quick-row{display:flex;align-items:center;gap:8px;margin-top:9px;color:#77e1c3;font-size:12px}
+.quick-row .spacer{flex:1}
+.member-list{display:flex;flex-direction:column;gap:8px;max-height:440px;overflow:auto;padding-right:2px}
+.member{display:grid;grid-template-columns:20px minmax(0,1fr) auto auto auto;gap:8px;align-items:center;padding:10px 11px;border:1px solid #1d2c42;background:#111c2e;border-radius:10px}
+.member.paid{opacity:.45}
+.member.paid .mname{text-decoration:line-through}.mname{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.money{font-variant-numeric:tabular-nums;color:#40d7ae;font-weight:800;font-size:12px}.member.paid .money{color:#758197}
+.status{font-size:10px;border-radius:5px;padding:4px 7px;border:1px solid #0e896e;color:#45dcba;background:#0d2a26}.status.wait{border-color:#8f6f08;color:#f1c32f;background:#2a250f}
+.check{appearance:none;width:16px;height:16px;border:1px solid #7e8da0;border-radius:3px;background:#f7fafc;position:relative;cursor:pointer}.check:checked{background:#14b68e;border-color:#14b68e}.check:checked:after{content:"✓";position:absolute;color:#07161a;font-weight:900;font-size:13px;left:2px;top:-1px}
+.cost-input{display:flex;gap:8px;align-items:center}.cost-input .prefix{color:#77859a}
+.tabs{display:flex;gap:7px;flex-wrap:wrap}.tab-content{display:none}.tab-content.active{display:block}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{background:#111c2e;border:1px solid #233249;border-radius:11px;padding:13px}.stat .slabel{font-size:11px;color:#7d8b9f}.stat .sval{font-size:20px;font-weight:900;margin-top:6px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:18px;z-index:50}.modal.show{display:flex}
+.modal-card{width:min(900px,100%);max-height:88vh;overflow:auto;background:#121d2e;border:1px solid #2a3c56;border-radius:16px;box-shadow:0 20px 70px rgba(0,0,0,.45);padding:20px}
+.modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.modal-head h3{margin:0}
+.ocr-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.ocr-preview{background:#0b1320;border:1px solid #27384f;border-radius:11px;padding:10px}.ocr-preview img{max-width:100%;max-height:470px;display:block;margin:auto;border-radius:7px}
+.candidate-list{display:flex;flex-direction:column;gap:7px;max-height:420px;overflow:auto}
+.candidate{display:flex;align-items:center;gap:10px;background:#111c2e;border:1px solid #22324a;border-radius:8px;padding:8px 10px;min-height:46px}
+.candidate input.cand-check{width:16px;min-width:16px;max-width:16px;height:16px;flex:0 0 16px;margin:0;cursor:pointer}
+.candidate .candidate-index{min-width:28px;flex:0 0 28px;color:#748399}
+.candidate .candidate-name{flex:1 1 auto;min-width:0;color:#f1f5f9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.candidate .confidence{font-size:11px;color:#8ea0b7;margin-left:auto;min-width:54px;text-align:right}
+.small{font-size:11px;color:#8190a3}.footer-note{margin-top:18px;color:#65748a;font-size:11px;line-height:1.6}
+.empty{padding:30px;text-align:center;color:#6f7d90;font-size:13px}
+@media(max-width:1100px){.cards{grid-template-columns:repeat(2,1fr)}.main-grid{grid-template-columns:1fr}.member-toolbar{grid-template-columns:1fr auto auto}.ocr-grid{grid-template-columns:1fr}}
+@media(max-width:680px){.topbar{height:auto;min-height:90px;padding:12px 15px;align-items:flex-start}.toolbar{justify-content:flex-end}.container{padding:15px}.roundbar{padding:0 15px}.cards{grid-template-columns:1fr}.panel{padding:14px}.member{grid-template-columns:20px 1fr auto}.member .money,.member .status{grid-column:2}.member .icon-btn{grid-column:3;grid-row:1/3}.member-toolbar{grid-template-columns:1fr}.form-row{flex-direction:column}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">▤</div>
+    <div class="title-wrap">
+      <div class="title">打團分錢計算器 <span class="badge">v2.5 多團版</span></div>
+      <div class="subtitle">自動扣稅・PaddleOCR 團員辨識・跨團進度追蹤｜團次可右鍵刪除</div>
+    </div>
+  </div>
+  <div class="toolbar">
+    <button class="btn blue" id="statsBtn">📈 統計報表</button>
+    <button class="btn blue" id="exportBtn">🗃 匯入/匯出</button>
+    <button class="btn primary" id="newRoundBtn">＋ 新增團次</button>
+  </div>
+</header>
+<nav class="roundbar" id="roundBar"></nav>
+
+<main class="container">
+  <section class="cards">
+    <div class="card"><div class="label">成交總價 (Sum)</div><div class="value" id="totalValue">0 G</div><div class="note">掉落物品單價總和</div><div class="icon">▣</div></div>
+    <div class="card fee"><div class="label">寄售費(5%) ＋ 稅(10%)</div><div class="value" id="feeValue">0 G</div><div class="note">扣除總計 15% 費用</div><div class="icon">▦</div></div>
+    <div class="card net"><div class="label">團隊淨利潤 (Net)</div><div class="value" id="netValue">0 G</div><div class="note">扣稅後收益 - 打Boss成本</div><div class="icon">♟</div></div>
+    <div class="card per"><div class="label">每人應得分紅 (Per Head)</div><div class="value" id="perValue">0 G</div><div class="note">max(0, 淨利潤/人數)  <span id="paidCountCard">無條件捨去</span></div><div class="icon">＄</div></div>
+  </section>
+
+  <section class="main-grid">
+    <div class="left-col">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><span class="dot">▣</span>掉落物品明細</div>
+          <div class="panel-sub"><span id="itemCount">0</span> 項物品</div>
+        </div>
+        <div class="form-row">
+          <input id="itemName" placeholder="物品名稱 (如: 龍之召喚)" />
+          <input id="itemPrice" type="number" min="0" placeholder="成交金額" />
+          <button class="btn primary" id="addItemBtn" style="min-width:68px;font-size:20px">＋</button>
+        </div>
+        <div class="item-list" id="itemList"></div>
+        <div class="breakdown">
+          <div class="line"><span>1. 物品成交價:</span><strong id="bdTotal">0 G</strong></div>
+          <div class="line fee"><span>2. 寄售/上架手續費 (5%):</span><strong id="bdFive">0 G</strong></div>
+          <div class="line fee"><span>3. 交易稅 (10%):</span><strong id="bdTen">0 G</strong></div>
+          <div class="line net"><span>4. 扣稅後淨收益 (85%):</span><strong id="bdNet">0 G</strong></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title"><span class="dot" style="color:#ff6b86">●</span>打Boss 總成本</div><div class="panel-sub">水費 / 藥劑 / 補品等</div></div>
+        <div class="cost-input"><span class="prefix">$</span><input id="bossCost" type="number" min="0" placeholder="10000000" /><button class="btn" id="clearCost">清除</button></div>
+        <div class="cost-note">此金額會直接從「扣稅後淨收益」中扣除，再由全體團員均分。</div>
+      </div>
+    </div>
+
+    <div class="right-col">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><span class="dot">♣</span>參團人員與發錢追蹤 <span class="badge" id="memberCountBadge">0 人</span></div>
+          <div class="toolbar">
+            <button class="btn primary" id="ocrBtn">▣ 圖片 OCR 辨識</button>
+            <button class="btn" id="bulkBtn">⇩ 批次貼上</button>
+          </div>
+        </div>
+        <div class="member-toolbar">
+          <input id="memberInput" placeholder="輸入團員 ID / 暱稱..." />
+          <button class="btn primary" id="addMemberBtn">👤 新增</button>
+          <button class="btn" id="sampleBtn">載入範例</button>
+        </div>
+        <div class="progress-box">
+          <div class="progress-top"><strong>發放進度: <span id="progressText">0/0 人</span></strong><span class="remain">剩餘待發: <strong id="remainValue">0 G</strong></span></div>
+          <div class="bar"><span id="progressBar" style="width:0%"></span></div>
+          <div class="quick-row">
+            <button class="btn ghost" id="allPaidBtn">✓ 全選已付</button>
+            <span>|</span>
+            <button class="btn ghost" id="resetPaidBtn">↩ 全部重置</button>
+            <span class="spacer"></span>
+            <input id="searchMember" style="width:125px;padding:7px 10px" placeholder="搜尋團員..." />
+          </div>
+        </div>
+        <div class="member-list" id="memberList"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer-note">
+    本網站為純前端版本，資料預設保存在目前瀏覽器的 LocalStorage，可直接部署到 GitHub Pages。OCR 使用 PaddleOCR 官方瀏覽器版 (PaddleOCR.js)，第一次執行 OCR 時需要從 CDN 下載引擎與模型，因此請保持網路連線。
+  </div>
+</main>
+
+<!-- OCR Modal -->
+<div class="modal" id="ocrModal">
+  <div class="modal-card">
+    <div class="modal-head"><h3>圖片 OCR：辨識所有團員</h3><button class="icon-btn" id="closeOcr">✕</button></div>
+    <div class="small" style="margin-bottom:10px">建議直接丟入遊戲「隊伍」面板截圖。新版會先偵測每位團員的綠色 HP 條，再逐人裁切名字區域並用 4 種影像處理方式 OCR；右側會顯示實際辨識到的團員名稱，可勾選後加入目前團次。</div>
+    <input id="ocrFile" type="file" accept="image/*" />
+    <div class="ocr-grid" style="margin-top:12px">
+      <div class="ocr-preview"><div class="small" style="margin-bottom:8px">圖片預覽 / OCR 區域</div><img id="ocrPreview" alt="OCR preview" /></div>
+      <div>
+        <div id="ocrProgress" class="small" style="margin:7px 0 10px">尚未開始</div>
+        <div class="candidate-list" id="candidateList"><div class="empty">選擇圖片後開始辨識</div></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:15px">
+      <button class="btn" id="selectAllCandidates">全選</button>
+      <button class="btn" id="deselectAllCandidates">全不選</button>
+      <button class="btn primary" id="addCandidates">加入目前團次</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk Modal -->
+<div class="modal" id="bulkModal">
+  <div class="modal-card" style="max-width:650px">
+    <div class="modal-head"><h3>批次加入團員</h3><button class="icon-btn" id="closeBulk">✕</button></div>
+    <div class="small">每行一人，也可以用逗號、空白或 Tab 分隔。</div>
+    <textarea id="bulkText" rows="12" placeholder="Phoenix777&#10;MeowMeowMilk&#10;包包頭阿姨&#10;師爺你給翻譯翻譯&#10;かわ余"></textarea>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px"><button class="btn" id="closeBulk2">取消</button><button class="btn primary" id="confirmBulk">加入團員</button></div>
+  </div>
+</div>
+
+<!-- Import / Export Modal -->
+<div class="modal" id="dataModal">
+  <div class="modal-card" style="max-width:700px">
+    <div class="modal-head"><h3>匯入 / 匯出</h3><button class="icon-btn" id="closeData">✕</button></div>
+    <div class="small" style="margin-bottom:8px">匯出的 JSON 可在另一台電腦重新匯入。</div>
+    <div class="toolbar" style="margin-bottom:12px">
+      <button class="btn primary" id="downloadJson">下載 JSON</button>
+      <label class="btn" style="display:inline-flex;align-items:center;gap:6px">選擇 JSON<input id="importJson" type="file" accept=".json,application/json" style="display:none"></label>
+      <button class="btn danger" id="wipeData">清除本機全部資料</button>
+    </div>
+    <textarea id="dataPreview" rows="18" readonly></textarea>
+  </div>
+</div>
+
+<!-- Stats Modal -->
+<div class="modal" id="statsModal">
+  <div class="modal-card">
+    <div class="modal-head"><h3>統計報表</h3><button class="icon-btn" id="closeStats">✕</button></div>
+    <div class="stats-grid" id="statsGrid"></div>
+    <div style="margin-top:15px" class="small">本報表依目前瀏覽器中的所有團次資料計算。</div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = "raid_splitter_v25_github";
+const $ = s => document.querySelector(s);
+const fmt = n => Math.floor(Number(n)||0).toLocaleString("en-US");
+const uid = () => Math.random().toString(36).slice(2)+Date.now().toString(36);
+
+const defaultMembers = ["Phoenix777","MeowMeowMilk","包包頭阿姨","師爺你給翻譯翻譯","かゎ余","接力式絕食","RuruET","丘丘丘兵","ブラックシープ","YungKai"];
+const defaultState = {
+  version:"2.5",
+  rounds:[
+    {id:uid(), name:"開團 #3", date:"9/11", items:[{id:uid(),name:"打團掉落物",price:75000000}],
+     bossCost:10000000, members:defaultMembers.map(n=>({id:uid(),name:n,paid:false}))}
+  ],
+  activeRound:0
+};
+let state = load();
+let ocrCandidates = [];
+
+function load(){
+  try{ const x=JSON.parse(localStorage.getItem(STORAGE_KEY)); if(x&&Array.isArray(x.rounds)) return x; }catch(e){}
+  return structuredClone(defaultState);
+}
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}
+function active(){return state.rounds[state.activeRound] || state.rounds[0];}
+function calc(r){
+  const total=r.items.reduce((a,b)=>a+(Number(b.price)||0),0);
+  const fee=Math.floor(total*.15);
+  const afterTax=Math.max(0,total-fee);
+  const boss=Math.max(0,Number(r.bossCost)||0);
+  const net=Math.max(0,afterTax-boss);
+  const count=r.members.length;
+  const per=count?Math.floor(net/count):0;
+  const paid=r.members.filter(m=>m.paid).length;
+  return {total,fee,afterTax,boss,net,count,per,paid,remaining:Math.max(0,(count-paid)*per)};
+}
+
+function render(){
+  const r=active(); const c=calc(r);
+  $("#roundBar").innerHTML="";
+  state.rounds.forEach((round,i)=>{
+    const b=document.createElement("button");
+    b.className="round "+(i===state.activeRound?"active":"");
+    b.innerHTML=`${esc(round.name||"開團 #"+(i+1))} <span class="count">${round.members.length}人</span>`;
+
+    // 左鍵：切換團次
+    b.onclick=()=>{state.activeRound=i;save();render();};
+
+    // 右鍵：刪除該團次
+    b.oncontextmenu=(e)=>{
+      e.preventDefault();
+      const roundName=round.name || "開團 #"+(i+1);
+
+      if(state.rounds.length<=1){
+        alert("至少需要保留一個團次，無法刪除。");
+        return;
+      }
+
+      const memberCount=round.members?.length || 0;
+      const itemCount=round.items?.length || 0;
+      const extra=(memberCount || itemCount)
+        ? `\n\n此團次包含 ${memberCount} 位團員、${itemCount} 項物品。`
+        : "";
+
+      if(!confirm(`確定要刪除「${roundName}」嗎？${extra}\n\n刪除後無法復原。`)) return;
+
+      state.rounds.splice(i,1);
+
+      if(state.rounds.length===0){
+        state.activeRound=0;
+      }else{
+        state.activeRound=Math.min(state.activeRound,state.rounds.length-1);
+      }
+
+      save();
+      render();
+    };
+
+    $("#roundBar").appendChild(b);
+  });
+  $("#totalValue").textContent=fmt(c.total)+" G";
+  $("#feeValue").textContent=fmt(c.fee)+" G";
+  $("#netValue").textContent=fmt(c.net)+" G";
+  $("#perValue").textContent=fmt(c.per)+" G";
+  $("#paidCountCard").textContent=c.count?`已付 ${c.paid}/${c.count}`:"無條件捨去";
+  $("#itemCount").textContent=r.items.length;
+  $("#memberCountBadge").textContent=c.count+" 人";
+  $("#bdTotal").textContent=fmt(c.total)+" G";
+  $("#bdFive").textContent="-"+fmt(Math.floor(c.total*.05))+" G";
+  $("#bdTen").textContent="-"+fmt(Math.floor(c.total*.10))+" G";
+  $("#bdNet").textContent=fmt(c.afterTax)+" G";
+  $("#bossCost").value=c.boss||"";
+  $("#progressText").textContent=`${c.paid}/${c.count} 人`;
+  $("#remainValue").textContent=fmt(c.remaining)+" G";
+  $("#progressBar").style.width=(c.count?Math.round(c.paid/c.count*100):0)+"%";
+  renderItems(r); renderMembers(r);
+  $("#dataPreview").value=JSON.stringify(state,null,2);
+}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));}
+function renderItems(r){
+  const box=$("#itemList"); if(!r.items.length){box.innerHTML='<div class="empty">尚未新增掉落物品</div>';return;}
+  box.innerHTML=r.items.map((it,i)=>`<div class="item-row">
+    <span class="item-index">${i+1}.</span><span class="item-name">${esc(it.name)}</span>
+    <span class="item-price">${fmt(it.price)} G</span>
+    <button class="icon-btn del-item" data-id="${it.id}">▣</button>
+  </div>`).join("");
+  box.querySelectorAll(".del-item").forEach(b=>b.onclick=()=>{r.items=r.items.filter(x=>x.id!==b.dataset.id);save();render();});
+}
+function renderMembers(r){
+  const q=($("#searchMember").value||"").trim().toLowerCase();
+  const list=r.members.filter(m=>m.name.toLowerCase().includes(q));
+  const box=$("#memberList");
+  if(!list.length){box.innerHTML='<div class="empty">沒有符合條件的團員</div>';return;}
+  const per=calc(r).per;
+  box.innerHTML=list.map(m=>`<div class="member ${m.paid?'paid':''}">
+    <input class="check member-check" type="checkbox" ${m.paid?'checked':''} data-id="${m.id}">
+    <span class="mname">${esc(m.name)}</span>
+    <span class="money">${fmt(per)} G</span>
+    <span class="status ${m.paid?'':'wait'}">${m.paid?'已發放':'待領取'}</span>
+    <button class="icon-btn del-member" data-id="${m.id}">▣</button>
+  </div>`).join("");
+  box.querySelectorAll(".member-check").forEach(ch=>ch.onchange=()=>{
+    const m=r.members.find(x=>x.id===ch.dataset.id); if(m)m.paid=ch.checked;save();render();
+  });
+  box.querySelectorAll(".del-member").forEach(b=>b.onclick=()=>{
+    r.members=r.members.filter(x=>x.id!==b.dataset.id);save();render();
+  });
+}
+
+function addMember(name){
+  const r=active(); name=String(name||"").trim(); if(!name)return false;
+  if(r.members.some(m=>m.name.toLowerCase()===name.toLowerCase())) return false;
+  r.members.push({id:uid(),name,paid:false});return true;
+}
+function addItem(){
+  const name=$("#itemName").value.trim(), price=Number($("#itemPrice").value);
+  if(!name || !Number.isFinite(price) || price<0){alert("請輸入有效的物品名稱與成交金額。");return;}
+  active().items.push({id:uid(),name,price});$("#itemName").value="";$("#itemPrice").value="";save();render();
+}
+$("#addItemBtn").onclick=addItem;
+$("#itemPrice").addEventListener("keydown",e=>{if(e.key==="Enter")addItem()});
+$("#addMemberBtn").onclick=()=>{
+  if(addMember($("#memberInput").value)){ $("#memberInput").value="";save();render();}
+  else alert("團員名稱為空白，或已經存在。");
+};
+$("#memberInput").addEventListener("keydown",e=>{if(e.key==="Enter")$("#addMemberBtn").click()});
+$("#bossCost").addEventListener("change",()=>{active().bossCost=Number($("#bossCost").value)||0;save();render()});
+$("#clearCost").onclick=()=>{active().bossCost=0;save();render()};
+$("#searchMember").oninput=()=>renderMembers(active());
+
+$("#allPaidBtn").onclick=()=>{active().members.forEach(m=>m.paid=true);save();render()};
+$("#resetPaidBtn").onclick=()=>{active().members.forEach(m=>m.paid=false);save();render()};
+
+$("#newRoundBtn").onclick=()=>{
+  const name=prompt("請輸入團次名稱，例如：開團 #4");
+  if(!name)return;
+  state.rounds.unshift({id:uid(),name,date:new Date().toLocaleDateString("zh-TW",{month:"numeric",day:"numeric"}),items:[],bossCost:0,members:[]});
+  state.activeRound=0;save();render();
+};
+$("#sampleBtn").onclick=()=>{defaultMembers.forEach(addMember);save();render()};
+$("#bulkBtn").onclick=()=>openModal("bulkModal");
+$("#closeBulk").onclick=$("#closeBulk2").onclick=()=>closeModal("bulkModal");
+$("#confirmBulk").onclick=()=>{
+  const raw=$("#bulkText").value;
+  const names=raw.split(/[\n,\t，；;、]+/).map(x=>x.trim()).filter(Boolean);
+  let n=0; names.forEach(x=>{if(addMember(x))n++});$("#bulkText").value="";save();render();closeModal("bulkModal");alert(`成功加入 ${n} 位團員。`);
+};
+
+$("#ocrBtn").onclick=()=>openModal("ocrModal");
+$("#closeOcr").onclick=()=>closeModal("ocrModal");
+$("#ocrFile").onchange=handleOCR;
+$("#selectAllCandidates").onclick=()=>document.querySelectorAll(".cand-check").forEach(x=>x.checked=true);
+$("#deselectAllCandidates").onclick=()=>document.querySelectorAll(".cand-check").forEach(x=>x.checked=false);
+$("#addCandidates").onclick=()=>{
+  let n=0;
+  document.querySelectorAll(".cand-check:checked").forEach(x=>{if(addMember(x.dataset.name))n++});
+  save();render();closeModal("ocrModal");
+  alert(`OCR 選取結果已加入 ${n} 位新團員。`);
+};
+
+function openModal(id){$("#"+id).classList.add("show")}
+function closeModal(id){$("#"+id).classList.remove("show")}
+["ocrModal","bulkModal","dataModal","statsModal"].forEach(id=>$("#"+id).addEventListener("click",e=>{if(e.target.id===id)closeModal(id)}));
+
+/* ---------- PaddleOCR 初始化與辨識 ---------- */
+let paddleOcrInstance = null;
+
+async function getPaddleOCR(logger) {
+  if (paddleOcrInstance) return paddleOcrInstance;
+  logger("首次載入需下載引擎與模型，請稍候...");
+  try {
+    const module = await import("https://cdn.jsdelivr.net/npm/@paddleocr/paddleocr-js/+esm");
+    const { PaddleOCR } = module;
+    paddleOcrInstance = await PaddleOCR.create({
+      lang: "ch",
+      ocrVersion: "PP-OCRv5",
+      ortOptions: {
+        env: {
+          wasm: {
+            wasmPaths: "https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/"
+          }
+        }
+      }
+    });
+    logger("PaddleOCR 載入完成！");
+    return paddleOcrInstance;
+  } catch (err) {
+    console.error("PaddleOCR 載入失敗:", err);
+    throw new Error("無法載入 PaddleOCR，請確認網路連線或使用較新版本的瀏覽器。");
+  }
+}
+
+async function doPaddleOcrPredict(canvas, label) {
+  const ocr = await getPaddleOCR(msg => {
+    $("#ocrProgress").textContent = msg;
+  });
+  $("#ocrProgress").textContent = label + "：正在辨識...";
+  
+  // 將 canvas 轉為 Blob 並送入 PaddleOCR
+  const blob = await new Promise(r => canvas.toBlob(r, "image/png"));
+  const [result] = await ocr.predict(blob);
+  
+  // 回傳轉譯成與原本 Tesseract 類似的格式 [{ text: string, confidence: number }]
+  return (result?.items || []).map(it => ({
+    text: it.text,
+    confidence: (it.score || 0) * 100
+  }));
+}
+
+async function handleOCR(e){
+  const file=e.target.files?.[0]; if(!file)return;
+  const url=URL.createObjectURL(file);
+  $("#ocrProgress").textContent="正在分析隊伍面板…";
+  $("#candidateList").innerHTML='<div class="empty">正在定位每一位團員…</div>';
+
+  try{
+    const img=await loadImage(url);
+
+    // 這款遊戲的隊伍欄有非常穩定的特徵：
+    // 每一位成員名字下方都有一條「綠色 HP 條」。
+    // 這裡維持「先找 HP 條 → 一人一列切圖 → 每列單獨 OCR」的穩定做法。
+    const rows=detectMemberRows(img);
+
+    if(rows.length===0){
+      // 找不到 HP 條時改用整張圖辨識
+      $("#ocrProgress").textContent="找不到隊伍 HP 條，改用備援辨識…";
+      const fallback=buildFallbackOCRCanvas(img);
+      $("#ocrPreview").src=fallback.toDataURL("image/png");
+      const lines = await doPaddleOcrPredict(fallback, "整張隊伍區域");
+      ocrCandidates=parseCandidates(lines);
+    }else{
+      const preview=drawRowsPreview(img,rows);
+      $("#ocrPreview").src=preview.toDataURL("image/png");
+
+      const candidates=[];
+      const seen=new Set();
+
+      for(let i=0;i<rows.length;i++){
+        $("#ocrProgress").textContent=`辨識團員 ${i+1}/${rows.length}…`;
+        const variants=buildNameVariants(img,rows[i]);
+        let best=null;
+
+        for(let v=0;v<variants.length;v++){
+          const lines = await doPaddleOcrPredict(
+            variants[v],
+            `第 ${i+1} 位：影像預處理 ${v+1}/${variants.length}`
+          );
+          
+          // PaddleOCR 如果同一列有多個框，將字串與信心度做整合
+          const text = lines.map(l => l.text).join(" ");
+          const conf = lines.length ? lines.reduce((a, b) => a + b.confidence, 0) / lines.length : 0;
+
+          const local=parseSingleName(text, conf);
+          if(local && (!best || local.score>best.score)) best=local;
+        }
+
+        if(best && !seen.has(best.name.toLowerCase())){
+          seen.add(best.name.toLowerCase());
+          candidates.push({
+            name:best.name,
+            confidence:Math.round(best.score),
+            row:i+1
+          });
+        }
+      }
+
+      ocrCandidates=candidates;
+    }
+
+    showCandidates(ocrCandidates);
+    $("#ocrProgress").textContent=`辨識完成：偵測到 ${ocrCandidates.length} 位候選團員。`;
+  }catch(err){
+    console.error(err);
+    $("#ocrProgress").textContent="OCR 失敗："+(err.message||err);
+    $("#candidateList").innerHTML='<div class="empty">OCR 失敗。請確認網路正常，或使用較清楚、未壓縮的遊戲截圖。</div>';
+  }finally{
+    URL.revokeObjectURL(url);
+  }
+}
+
+function loadImage(src){
+  return new Promise((resolve,reject)=>{
+    const im=new Image();
+    im.onload=()=>resolve(im);
+    im.onerror=reject;
+    im.src=src;
+  });
+}
+
+/* ---------- 遊戲隊伍欄專用：HP 綠條偵測 ---------- */
+function detectMemberRows(img){
+  const w=img.naturalWidth,h=img.naturalHeight;
+  const scale=Math.min(1, 900/Math.max(w,h));
+  const aw=Math.max(1,Math.floor(w*scale));
+  const ah=Math.max(1,Math.floor(h*scale));
+
+  const c=document.createElement("canvas");
+  c.width=aw;c.height=ah;
+  const ctx=c.getContext("2d",{willReadFrequently:true});
+  ctx.drawImage(img,0,0,aw,ah);
+
+  const startX=Math.floor(aw*0.22);
+  const endX=Math.floor(aw*0.60);
+  
+  const startY=Math.floor(ah*0.01); 
+  const endY=Math.floor(ah*0.99);
+
+  const data=ctx.getImageData(startX, startY, endX-startX, endY-startY).data;
+  const scanW=endX-startX;
+  const rowSums = new Array(endY-startY).fill(0);
+
+  for(let y=0; y<endY-startY; y++){
+    let whiteCount = 0;
+    for(let x=0; x<scanW; x++){
+      const idx=(y*scanW+x)*4;
+      const r=data[idx], g=data[idx+1], b=data[idx+2];
+      if(r>180 && g>180 && b>180 && Math.abs(r-g)<25 && Math.abs(g-b)<25){
+        whiteCount++;
+      }
+    }
+    rowSums[y] = whiteCount;
+  }
+
+  const rows=[];
+  const minGap=Math.floor(ah*0.035);
+  let inPeak = false;
+  let peakStartY = 0;
+
+  for(let y=0; y<rowSums.length; y++){
+     if(rowSums[y] > 3) {
+        if(!inPeak) {
+           inPeak = true;
+           peakStartY = y;
+        }
+     } else {
+        if(inPeak) {
+           const peakHeight = y - peakStartY;
+           if(peakHeight >= 2) { 
+               const centerLocalY = Math.floor(peakStartY + peakHeight / 2);
+               const actualY = Math.round((centerLocalY + startY) / scale);
+               
+               if(rows.length===0 || (actualY - rows[rows.length-1].nameCenterY) > minGap/scale){
+                   rows.push({ nameCenterY: actualY });
+               } else {
+                   rows[rows.length-1].nameCenterY = Math.round((rows[rows.length-1].nameCenterY + actualY)/2);
+               }
+           }
+           inPeak = false;
+        }
+     }
+  }
+  return rows.slice(0, 18);
+}
+
+function actualYGap(y){ return y; }
+
+function buildNameVariants(img, row){
+  const w=img.naturalWidth, h=img.naturalHeight;
+  const cy = row.nameCenterY;
+  
+  const sx = Math.floor(w * 0.21);
+  const ex = Math.floor(w * 0.95); 
+  const sw = ex - sx;
+
+  const cropH = Math.floor(h * 0.045); 
+  const sy = Math.max(0, cy - Math.floor(cropH/2));
+  const sh = cropH;
+
+  return [
+    preprocessCrop(img, sx, sy, sw, sh, { mode: "preserve", scale: 2.5 }),
+    preprocessCrop(img, sx, sy, sw, sh, { mode: "darken", scale: 2.5 }),
+    preprocessCrop(img, sx, sy, sw, sh, { mode: "contrast", scale: 2.5 })
+  ];
+}
+
+function preprocessCrop(img, sx, sy, sw, sh, opt){
+  const c = document.createElement("canvas");
+  const scale = opt.scale || 2.5; 
+  const pad = 24; 
+  c.width = sw * scale + pad * 2;
+  c.height = sh * scale + pad * 2;
+  const ctx = c.getContext("2d", {willReadFrequently: true});
+  
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, c.width, c.height);
+  
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(img, sx, sy, sw, sh, pad, pad, sw * scale, sh * scale);
+  
+  const im = ctx.getImageData(0, 0, c.width, c.height);
+  const d = im.data;
+  
+  for(let i=0; i<d.length; i+=4){
+     const r=d[i], g=d[i+1], b=d[i+2];
+     if (r===255 && g===255 && b===255) continue;
+     
+     const gray = r*0.299 + g*0.587 + b*0.114;
+     
+     if (gray > 140) {
+         if (opt.mode === "preserve") {
+             d[i] = d[i+1] = d[i+2] = 255 - gray;
+         } else if (opt.mode === "darken") {
+             d[i] = d[i+1] = d[i+2] = Math.max(0, 255 - (gray * 1.2)); 
+         } else {
+             d[i] = d[i+1] = d[i+2] = Math.max(0, 255 - (gray - 30)*1.3);
+         }
+     } else {
+         d[i] = d[i+1] = d[i+2] = 255; 
+     }
+  }
+  ctx.putImageData(im, 0, 0);
+  return c;
+}
+
+function buildFallbackOCRCanvas(img){
+  const w=img.naturalWidth,h=img.naturalHeight;
+  const sx=Math.round(w*0.05),sy=Math.round(h*0.14);
+  const sw=Math.round(w*0.86),sh=Math.round(h*0.84);
+  const c=document.createElement("canvas");
+  c.width=sw*3;c.height=sh*3;
+  const ctx=c.getContext("2d");
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(img,sx,sy,sw,sh,0,0,c.width,c.height);
+  return c;
+}
+
+function drawRowsPreview(img, rows){
+  const c=document.createElement("canvas");
+  const scale=3;
+  c.width=img.naturalWidth*scale;
+  c.height=img.naturalHeight*scale;
+  const ctx=c.getContext("2d");
+  ctx.drawImage(img,0,0,c.width,c.height);
+  ctx.lineWidth=2*scale;
+  ctx.strokeStyle="#35e0ad";
+  ctx.fillStyle="rgba(20,220,170,.12)";
+
+  for(let i=0;i<rows.length;i++){
+    const cy = rows[i].nameCenterY * scale;
+    const cropH = Math.floor(img.naturalHeight * 0.045 * scale);
+    const y = cy - Math.floor(cropH/2);
+
+    const x = img.naturalWidth * 0.21 * scale;
+    const w = img.naturalWidth * 0.74 * scale;
+
+    ctx.fillRect(x, y, w, cropH);
+    ctx.strokeRect(x, y, w, cropH);
+    
+    ctx.fillStyle="#35e0ad";
+    ctx.font=`${18*scale}px sans-serif`;
+    ctx.fillText(String(i+1), x + 3*scale, y - 5*scale);
+    ctx.fillStyle="rgba(20,220,170,.12)";
+  }
+  return c;
+}
+
+/* ---------- 單列名稱清理 ---------- */
+function parseSingleName(text,confidence){
+  let s=String(text||"").trim();
+
+  s=s.replace(/[\r\n]+/g," ");
+  s=s.replace(/[|¦~`]/g,"");
+  s=s.replace(/\s{2,}/g," ").trim();
+
+  s=s.replace(/^\s*\d{1,3}\s*/,"");
+  s=s.replace(/\s*\d{1,3}\s*$/,"");
+
+  s=s.replace(/隊伍|成員|EXP倍率|幸運率|發放進度|剩餘待發|待領取|已發放/gi,"").trim();
+
+  s=s.replace(/[^\u3400-\u9fff\u3040-\u30ff\u30a0-\u30ffA-Za-z0-9 _'\-]/g,"").trim();
+
+  if(!s || s.length<2)return null;
+  if(/^\d+$/.test(s))return null;
+  if(/^[\W_]+$/u.test(s))return null;
+
+  if(/^(隊伍|成員|EXP|EXP倍率|幸運率|HP|MP)$/i.test(s))return null;
+
+  let score=Number(confidence)||0;
+  if(/[A-Za-z]/.test(s))score+=5;
+  if(/[\u3400-\u9fff\u3040-\u30ff]/.test(s))score+=8;
+  if(s.length>=3)score+=4;
+  if(s.length>18)score-=10;
+
+  return {name:s,score};
+}
+
+function parseCandidates(lines){
+  const out=[];const seen=new Set();
+  for(const line of lines){
+    const local=parseSingleName(line.text,line.confidence);
+    if(!local)continue;
+    const key=local.name.toLowerCase();
+    if(seen.has(key))continue;
+    seen.add(key);
+    out.push({name:local.name,confidence:Math.round(Math.min(99,local.score))});
+  }
+  return out;
+}
+
+// 顯示 OCR 辨識候選名單
+function showCandidates(candidates){
+  const box=$("#candidateList");
+
+  if(!Array.isArray(candidates) || candidates.length===0){
+    box.innerHTML='<div class="empty">沒有辨識到可用的團員名稱，請換一張更清楚的截圖再試。</div>';
+    return;
+  }
+
+  box.innerHTML=candidates.map((c,i)=>`
+    <label class="candidate">
+      <input
+        class="cand-check"
+        type="checkbox"
+        data-name="${esc(c.name)}"
+        checked
+      >
+      <span class="candidate-index">${i+1}.</span>
+      <span class="candidate-name" title="${esc(c.name)}">${esc(c.name)}</span>
+      <span class="confidence">信心 ${Math.max(0,Math.min(99,Number(c.confidence)||0))}%</span>
+    </label>
+  `).join("");
+}
+
+$("#exportBtn").onclick=()=>{openModal("dataModal");$("#dataPreview").value=JSON.stringify(state,null,2)};
+$("#closeData").onclick=()=>closeModal("dataModal");
+$("#downloadJson").onclick=()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="raid-splitter-data.json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+$("#importJson").onchange=async e=>{
+  const file=e.target.files?.[0];if(!file)return;
+  try{
+    const x=JSON.parse(await file.text());
+    if(!x||!Array.isArray(x.rounds))throw new Error("格式錯誤");
+    state=x;state.activeRound=Math.min(Math.max(0,Number(state.activeRound)||0),state.rounds.length-1);save();render();closeModal("dataModal");alert("匯入完成。");
+  }catch(err){alert("JSON 匯入失敗："+err.message)}
+};
+$("#wipeData").onclick=()=>{
+  if(!confirm("確定清除本機所有團次資料？此動作無法復原。"))return;
+  localStorage.removeItem(STORAGE_KEY);state=structuredClone(defaultState);save();render();closeModal("dataModal");
+};
+
+$("#statsBtn").onclick=()=>{
+  const rounds=state.rounds, total=rounds.reduce((a,r)=>a+calc(r).total,0), net=rounds.reduce((a,r)=>a+calc(r).net,0);
+  const items=rounds.reduce((a,r)=>a+r.items.length,0), people=rounds.reduce((a,r)=>a+r.members.length,0), paid=rounds.reduce((a,r)=>a+calc(r).paid,0);
+  $("#statsGrid").innerHTML=[
+    ["總團次",rounds.length],["總成交額",fmt(total)+" G"],["總淨利潤",fmt(net)+" G"],
+    ["物品數",items],["累計參團人次",people],["已發放人次",paid]
+  ].map(x=>`<div class="stat"><div class="slabel">${x[0]}</div><div class="sval">${x[1]}</div></div>`).join("");
+  openModal("statsModal");
+};
+$("#closeStats").onclick=()=>closeModal("statsModal");
+
+// keyboard helpers
+document.addEventListener("keydown",e=>{if(e.key==="Escape")["ocrModal","bulkModal","dataModal","statsModal"].forEach(closeModal)});
+
+save();render();
+</script>
+</body>
+</html>
