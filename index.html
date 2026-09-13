@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>打團分錢計算器 v2.5 多團版 (PaddleOCR版)</title>
+<title>打團分錢計算器 v2.5 多團版</title>
 <meta name="theme-color" content="#0b1220" />
 <style>
 :root{
@@ -82,16 +82,9 @@ input:focus,textarea:focus{border-color:#2bc4a2;box-shadow:0 0 0 3px rgba(43,196
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:18px;z-index:50}.modal.show{display:flex}
 .modal-card{width:min(900px,100%);max-height:88vh;overflow:auto;background:#121d2e;border:1px solid #2a3c56;border-radius:16px;box-shadow:0 20px 70px rgba(0,0,0,.45);padding:20px}
 .modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.modal-head h3{margin:0}
-.ocr-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.ocr-preview{background:#0b1320;border:1px solid #27384f;border-radius:11px;padding:10px}.ocr-preview img{max-width:100%;max-height:470px;display:block;margin:auto;border-radius:7px}
-.candidate-list{display:flex;flex-direction:column;gap:7px;max-height:420px;overflow:auto}
-.candidate{display:flex;align-items:center;gap:10px;background:#111c2e;border:1px solid #22324a;border-radius:8px;padding:8px 10px;min-height:46px}
-.candidate input.cand-check{width:16px;min-width:16px;max-width:16px;height:16px;flex:0 0 16px;margin:0;cursor:pointer}
-.candidate .candidate-index{min-width:28px;flex:0 0 28px;color:#748399}
-.candidate .candidate-name{flex:1 1 auto;min-width:0;color:#f1f5f9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
-.candidate .confidence{font-size:11px;color:#8ea0b7;margin-left:auto;min-width:54px;text-align:right}
 .small{font-size:11px;color:#8190a3}.footer-note{margin-top:18px;color:#65748a;font-size:11px;line-height:1.6}
 .empty{padding:30px;text-align:center;color:#6f7d90;font-size:13px}
-@media(max-width:1100px){.cards{grid-template-columns:repeat(2,1fr)}.main-grid{grid-template-columns:1fr}.member-toolbar{grid-template-columns:1fr auto auto}.ocr-grid{grid-template-columns:1fr}}
+@media(max-width:1100px){.cards{grid-template-columns:repeat(2,1fr)}.main-grid{grid-template-columns:1fr}.member-toolbar{grid-template-columns:1fr auto auto}}
 @media(max-width:680px){.topbar{height:auto;min-height:90px;padding:12px 15px;align-items:flex-start}.toolbar{justify-content:flex-end}.container{padding:15px}.roundbar{padding:0 15px}.cards{grid-template-columns:1fr}.panel{padding:14px}.member{grid-template-columns:20px 1fr auto}.member .money,.member .status{grid-column:2}.member .icon-btn{grid-column:3;grid-row:1/3}.member-toolbar{grid-template-columns:1fr}.form-row{flex-direction:column}}
 </style>
 </head>
@@ -101,7 +94,7 @@ input:focus,textarea:focus{border-color:#2bc4a2;box-shadow:0 0 0 3px rgba(43,196
     <div class="logo">▤</div>
     <div class="title-wrap">
       <div class="title">打團分錢計算器 <span class="badge">v2.5 多團版</span></div>
-      <div class="subtitle">自動扣稅・PaddleOCR 團員辨識・跨團進度追蹤｜團次可右鍵刪除</div>
+      <div class="subtitle">自動扣稅・跨團進度追蹤｜團次可右鍵刪除</div>
     </div>
   </div>
   <div class="toolbar">
@@ -153,7 +146,6 @@ input:focus,textarea:focus{border-color:#2bc4a2;box-shadow:0 0 0 3px rgba(43,196
         <div class="panel-head">
           <div class="panel-title"><span class="dot">♣</span>參團人員與發錢追蹤 <span class="badge" id="memberCountBadge">0 人</span></div>
           <div class="toolbar">
-            <button class="btn primary" id="ocrBtn">▣ 圖片 OCR 辨識</button>
             <button class="btn" id="bulkBtn">⇩ 批次貼上</button>
           </div>
         </div>
@@ -179,30 +171,9 @@ input:focus,textarea:focus{border-color:#2bc4a2;box-shadow:0 0 0 3px rgba(43,196
   </section>
 
   <div class="footer-note">
-    本網站為純前端版本，資料預設保存在目前瀏覽器的 LocalStorage，可直接部署到 GitHub Pages。OCR 使用 PaddleOCR 官方瀏覽器版 (PaddleOCR.js)，第一次執行 OCR 時需要從 CDN 下載引擎與模型，因此請保持網路連線。
+    本網站為純前端版本，資料預設保存在目前瀏覽器的 LocalStorage，可直接部署到 GitHub Pages。
   </div>
 </main>
-
-<!-- OCR Modal -->
-<div class="modal" id="ocrModal">
-  <div class="modal-card">
-    <div class="modal-head"><h3>圖片 OCR：辨識所有團員</h3><button class="icon-btn" id="closeOcr">✕</button></div>
-    <div class="small" style="margin-bottom:10px">建議直接丟入遊戲「隊伍」面板截圖。新版會先偵測每位團員的綠色 HP 條，再逐人裁切名字區域並用 4 種影像處理方式 OCR；右側會顯示實際辨識到的團員名稱，可勾選後加入目前團次。</div>
-    <input id="ocrFile" type="file" accept="image/*" />
-    <div class="ocr-grid" style="margin-top:12px">
-      <div class="ocr-preview"><div class="small" style="margin-bottom:8px">圖片預覽 / OCR 區域</div><img id="ocrPreview" alt="OCR preview" /></div>
-      <div>
-        <div id="ocrProgress" class="small" style="margin:7px 0 10px">尚未開始</div>
-        <div class="candidate-list" id="candidateList"><div class="empty">選擇圖片後開始辨識</div></div>
-      </div>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:15px">
-      <button class="btn" id="selectAllCandidates">全選</button>
-      <button class="btn" id="deselectAllCandidates">全不選</button>
-      <button class="btn primary" id="addCandidates">加入目前團次</button>
-    </div>
-  </div>
-</div>
 
 <!-- Bulk Modal -->
 <div class="modal" id="bulkModal">
@@ -253,7 +224,6 @@ const defaultState = {
   activeRound:0
 };
 let state = load();
-let ocrCandidates = [];
 
 function load(){
   try{ const x=JSON.parse(localStorage.getItem(STORAGE_KEY)); if(x&&Array.isArray(x.rounds)) return x; }catch(e){}
@@ -404,381 +374,9 @@ $("#confirmBulk").onclick=()=>{
   let n=0; names.forEach(x=>{if(addMember(x))n++});$("#bulkText").value="";save();render();closeModal("bulkModal");alert(`成功加入 ${n} 位團員。`);
 };
 
-$("#ocrBtn").onclick=()=>openModal("ocrModal");
-$("#closeOcr").onclick=()=>closeModal("ocrModal");
-$("#ocrFile").onchange=handleOCR;
-$("#selectAllCandidates").onclick=()=>document.querySelectorAll(".cand-check").forEach(x=>x.checked=true);
-$("#deselectAllCandidates").onclick=()=>document.querySelectorAll(".cand-check").forEach(x=>x.checked=false);
-$("#addCandidates").onclick=()=>{
-  let n=0;
-  document.querySelectorAll(".cand-check:checked").forEach(x=>{if(addMember(x.dataset.name))n++});
-  save();render();closeModal("ocrModal");
-  alert(`OCR 選取結果已加入 ${n} 位新團員。`);
-};
-
 function openModal(id){$("#"+id).classList.add("show")}
 function closeModal(id){$("#"+id).classList.remove("show")}
-["ocrModal","bulkModal","dataModal","statsModal"].forEach(id=>$("#"+id).addEventListener("click",e=>{if(e.target.id===id)closeModal(id)}));
-
-/* ---------- PaddleOCR 初始化與辨識 ---------- */
-let paddleOcrInstance = null;
-
-async function getPaddleOCR(logger) {
-  if (paddleOcrInstance) return paddleOcrInstance;
-  logger("首次載入需下載引擎與模型，請稍候...");
-  try {
-    const module = await import("https://cdn.jsdelivr.net/npm/@paddleocr/paddleocr-js/+esm");
-    const { PaddleOCR } = module;
-    paddleOcrInstance = await PaddleOCR.create({
-      lang: "ch",
-      ocrVersion: "PP-OCRv5",
-      ortOptions: {
-        env: {
-          wasm: {
-            wasmPaths: "https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/"
-          }
-        }
-      }
-    });
-    logger("PaddleOCR 載入完成！");
-    return paddleOcrInstance;
-  } catch (err) {
-    console.error("PaddleOCR 載入失敗:", err);
-    throw new Error("無法載入 PaddleOCR，請確認網路連線或使用較新版本的瀏覽器。");
-  }
-}
-
-async function doPaddleOcrPredict(canvas, label) {
-  const ocr = await getPaddleOCR(msg => {
-    $("#ocrProgress").textContent = msg;
-  });
-  $("#ocrProgress").textContent = label + "：正在辨識...";
-  
-  // 將 canvas 轉為 Blob 並送入 PaddleOCR
-  const blob = await new Promise(r => canvas.toBlob(r, "image/png"));
-  const [result] = await ocr.predict(blob);
-  
-  // 回傳轉譯成與原本 Tesseract 類似的格式 [{ text: string, confidence: number }]
-  return (result?.items || []).map(it => ({
-    text: it.text,
-    confidence: (it.score || 0) * 100
-  }));
-}
-
-async function handleOCR(e){
-  const file=e.target.files?.[0]; if(!file)return;
-  const url=URL.createObjectURL(file);
-  $("#ocrProgress").textContent="正在分析隊伍面板…";
-  $("#candidateList").innerHTML='<div class="empty">正在定位每一位團員…</div>';
-
-  try{
-    const img=await loadImage(url);
-
-    // 這款遊戲的隊伍欄有非常穩定的特徵：
-    // 每一位成員名字下方都有一條「綠色 HP 條」。
-    // 這裡維持「先找 HP 條 → 一人一列切圖 → 每列單獨 OCR」的穩定做法。
-    const rows=detectMemberRows(img);
-
-    if(rows.length===0){
-      // 找不到 HP 條時改用整張圖辨識
-      $("#ocrProgress").textContent="找不到隊伍 HP 條，改用備援辨識…";
-      const fallback=buildFallbackOCRCanvas(img);
-      $("#ocrPreview").src=fallback.toDataURL("image/png");
-      const lines = await doPaddleOcrPredict(fallback, "整張隊伍區域");
-      ocrCandidates=parseCandidates(lines);
-    }else{
-      const preview=drawRowsPreview(img,rows);
-      $("#ocrPreview").src=preview.toDataURL("image/png");
-
-      const candidates=[];
-      const seen=new Set();
-
-      for(let i=0;i<rows.length;i++){
-        $("#ocrProgress").textContent=`辨識團員 ${i+1}/${rows.length}…`;
-        const variants=buildNameVariants(img,rows[i]);
-        let best=null;
-
-        for(let v=0;v<variants.length;v++){
-          const lines = await doPaddleOcrPredict(
-            variants[v],
-            `第 ${i+1} 位：影像預處理 ${v+1}/${variants.length}`
-          );
-          
-          // PaddleOCR 如果同一列有多個框，將字串與信心度做整合
-          const text = lines.map(l => l.text).join(" ");
-          const conf = lines.length ? lines.reduce((a, b) => a + b.confidence, 0) / lines.length : 0;
-
-          const local=parseSingleName(text, conf);
-          if(local && (!best || local.score>best.score)) best=local;
-        }
-
-        if(best && !seen.has(best.name.toLowerCase())){
-          seen.add(best.name.toLowerCase());
-          candidates.push({
-            name:best.name,
-            confidence:Math.round(best.score),
-            row:i+1
-          });
-        }
-      }
-
-      ocrCandidates=candidates;
-    }
-
-    showCandidates(ocrCandidates);
-    $("#ocrProgress").textContent=`辨識完成：偵測到 ${ocrCandidates.length} 位候選團員。`;
-  }catch(err){
-    console.error(err);
-    $("#ocrProgress").textContent="OCR 失敗："+(err.message||err);
-    $("#candidateList").innerHTML='<div class="empty">OCR 失敗。請確認網路正常，或使用較清楚、未壓縮的遊戲截圖。</div>';
-  }finally{
-    URL.revokeObjectURL(url);
-  }
-}
-
-function loadImage(src){
-  return new Promise((resolve,reject)=>{
-    const im=new Image();
-    im.onload=()=>resolve(im);
-    im.onerror=reject;
-    im.src=src;
-  });
-}
-
-/* ---------- 遊戲隊伍欄專用：HP 綠條偵測 ---------- */
-function detectMemberRows(img){
-  const w=img.naturalWidth,h=img.naturalHeight;
-  const scale=Math.min(1, 900/Math.max(w,h));
-  const aw=Math.max(1,Math.floor(w*scale));
-  const ah=Math.max(1,Math.floor(h*scale));
-
-  const c=document.createElement("canvas");
-  c.width=aw;c.height=ah;
-  const ctx=c.getContext("2d",{willReadFrequently:true});
-  ctx.drawImage(img,0,0,aw,ah);
-
-  const startX=Math.floor(aw*0.22);
-  const endX=Math.floor(aw*0.60);
-  
-  const startY=Math.floor(ah*0.01); 
-  const endY=Math.floor(ah*0.99);
-
-  const data=ctx.getImageData(startX, startY, endX-startX, endY-startY).data;
-  const scanW=endX-startX;
-  const rowSums = new Array(endY-startY).fill(0);
-
-  for(let y=0; y<endY-startY; y++){
-    let whiteCount = 0;
-    for(let x=0; x<scanW; x++){
-      const idx=(y*scanW+x)*4;
-      const r=data[idx], g=data[idx+1], b=data[idx+2];
-      if(r>180 && g>180 && b>180 && Math.abs(r-g)<25 && Math.abs(g-b)<25){
-        whiteCount++;
-      }
-    }
-    rowSums[y] = whiteCount;
-  }
-
-  const rows=[];
-  const minGap=Math.floor(ah*0.035);
-  let inPeak = false;
-  let peakStartY = 0;
-
-  for(let y=0; y<rowSums.length; y++){
-     if(rowSums[y] > 3) {
-        if(!inPeak) {
-           inPeak = true;
-           peakStartY = y;
-        }
-     } else {
-        if(inPeak) {
-           const peakHeight = y - peakStartY;
-           if(peakHeight >= 2) { 
-               const centerLocalY = Math.floor(peakStartY + peakHeight / 2);
-               const actualY = Math.round((centerLocalY + startY) / scale);
-               
-               if(rows.length===0 || (actualY - rows[rows.length-1].nameCenterY) > minGap/scale){
-                   rows.push({ nameCenterY: actualY });
-               } else {
-                   rows[rows.length-1].nameCenterY = Math.round((rows[rows.length-1].nameCenterY + actualY)/2);
-               }
-           }
-           inPeak = false;
-        }
-     }
-  }
-  return rows.slice(0, 18);
-}
-
-function actualYGap(y){ return y; }
-
-function buildNameVariants(img, row){
-  const w=img.naturalWidth, h=img.naturalHeight;
-  const cy = row.nameCenterY;
-  
-  const sx = Math.floor(w * 0.21);
-  const ex = Math.floor(w * 0.95); 
-  const sw = ex - sx;
-
-  const cropH = Math.floor(h * 0.045); 
-  const sy = Math.max(0, cy - Math.floor(cropH/2));
-  const sh = cropH;
-
-  return [
-    preprocessCrop(img, sx, sy, sw, sh, { mode: "preserve", scale: 2.5 }),
-    preprocessCrop(img, sx, sy, sw, sh, { mode: "darken", scale: 2.5 }),
-    preprocessCrop(img, sx, sy, sw, sh, { mode: "contrast", scale: 2.5 })
-  ];
-}
-
-function preprocessCrop(img, sx, sy, sw, sh, opt){
-  const c = document.createElement("canvas");
-  const scale = opt.scale || 2.5; 
-  const pad = 24; 
-  c.width = sw * scale + pad * 2;
-  c.height = sh * scale + pad * 2;
-  const ctx = c.getContext("2d", {willReadFrequently: true});
-  
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, c.width, c.height);
-  
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(img, sx, sy, sw, sh, pad, pad, sw * scale, sh * scale);
-  
-  const im = ctx.getImageData(0, 0, c.width, c.height);
-  const d = im.data;
-  
-  for(let i=0; i<d.length; i+=4){
-     const r=d[i], g=d[i+1], b=d[i+2];
-     if (r===255 && g===255 && b===255) continue;
-     
-     const gray = r*0.299 + g*0.587 + b*0.114;
-     
-     if (gray > 140) {
-         if (opt.mode === "preserve") {
-             d[i] = d[i+1] = d[i+2] = 255 - gray;
-         } else if (opt.mode === "darken") {
-             d[i] = d[i+1] = d[i+2] = Math.max(0, 255 - (gray * 1.2)); 
-         } else {
-             d[i] = d[i+1] = d[i+2] = Math.max(0, 255 - (gray - 30)*1.3);
-         }
-     } else {
-         d[i] = d[i+1] = d[i+2] = 255; 
-     }
-  }
-  ctx.putImageData(im, 0, 0);
-  return c;
-}
-
-function buildFallbackOCRCanvas(img){
-  const w=img.naturalWidth,h=img.naturalHeight;
-  const sx=Math.round(w*0.05),sy=Math.round(h*0.14);
-  const sw=Math.round(w*0.86),sh=Math.round(h*0.84);
-  const c=document.createElement("canvas");
-  c.width=sw*3;c.height=sh*3;
-  const ctx=c.getContext("2d");
-  ctx.imageSmoothingEnabled=false;
-  ctx.drawImage(img,sx,sy,sw,sh,0,0,c.width,c.height);
-  return c;
-}
-
-function drawRowsPreview(img, rows){
-  const c=document.createElement("canvas");
-  const scale=3;
-  c.width=img.naturalWidth*scale;
-  c.height=img.naturalHeight*scale;
-  const ctx=c.getContext("2d");
-  ctx.drawImage(img,0,0,c.width,c.height);
-  ctx.lineWidth=2*scale;
-  ctx.strokeStyle="#35e0ad";
-  ctx.fillStyle="rgba(20,220,170,.12)";
-
-  for(let i=0;i<rows.length;i++){
-    const cy = rows[i].nameCenterY * scale;
-    const cropH = Math.floor(img.naturalHeight * 0.045 * scale);
-    const y = cy - Math.floor(cropH/2);
-
-    const x = img.naturalWidth * 0.21 * scale;
-    const w = img.naturalWidth * 0.74 * scale;
-
-    ctx.fillRect(x, y, w, cropH);
-    ctx.strokeRect(x, y, w, cropH);
-    
-    ctx.fillStyle="#35e0ad";
-    ctx.font=`${18*scale}px sans-serif`;
-    ctx.fillText(String(i+1), x + 3*scale, y - 5*scale);
-    ctx.fillStyle="rgba(20,220,170,.12)";
-  }
-  return c;
-}
-
-/* ---------- 單列名稱清理 ---------- */
-function parseSingleName(text,confidence){
-  let s=String(text||"").trim();
-
-  s=s.replace(/[\r\n]+/g," ");
-  s=s.replace(/[|¦~`]/g,"");
-  s=s.replace(/\s{2,}/g," ").trim();
-
-  s=s.replace(/^\s*\d{1,3}\s*/,"");
-  s=s.replace(/\s*\d{1,3}\s*$/,"");
-
-  s=s.replace(/隊伍|成員|EXP倍率|幸運率|發放進度|剩餘待發|待領取|已發放/gi,"").trim();
-
-  s=s.replace(/[^\u3400-\u9fff\u3040-\u30ff\u30a0-\u30ffA-Za-z0-9 _'\-]/g,"").trim();
-
-  if(!s || s.length<2)return null;
-  if(/^\d+$/.test(s))return null;
-  if(/^[\W_]+$/u.test(s))return null;
-
-  if(/^(隊伍|成員|EXP|EXP倍率|幸運率|HP|MP)$/i.test(s))return null;
-
-  let score=Number(confidence)||0;
-  if(/[A-Za-z]/.test(s))score+=5;
-  if(/[\u3400-\u9fff\u3040-\u30ff]/.test(s))score+=8;
-  if(s.length>=3)score+=4;
-  if(s.length>18)score-=10;
-
-  return {name:s,score};
-}
-
-function parseCandidates(lines){
-  const out=[];const seen=new Set();
-  for(const line of lines){
-    const local=parseSingleName(line.text,line.confidence);
-    if(!local)continue;
-    const key=local.name.toLowerCase();
-    if(seen.has(key))continue;
-    seen.add(key);
-    out.push({name:local.name,confidence:Math.round(Math.min(99,local.score))});
-  }
-  return out;
-}
-
-// 顯示 OCR 辨識候選名單
-function showCandidates(candidates){
-  const box=$("#candidateList");
-
-  if(!Array.isArray(candidates) || candidates.length===0){
-    box.innerHTML='<div class="empty">沒有辨識到可用的團員名稱，請換一張更清楚的截圖再試。</div>';
-    return;
-  }
-
-  box.innerHTML=candidates.map((c,i)=>`
-    <label class="candidate">
-      <input
-        class="cand-check"
-        type="checkbox"
-        data-name="${esc(c.name)}"
-        checked
-      >
-      <span class="candidate-index">${i+1}.</span>
-      <span class="candidate-name" title="${esc(c.name)}">${esc(c.name)}</span>
-      <span class="confidence">信心 ${Math.max(0,Math.min(99,Number(c.confidence)||0))}%</span>
-    </label>
-  `).join("");
-}
+["bulkModal","dataModal","statsModal"].forEach(id=>$("#"+id).addEventListener("click",e=>{if(e.target.id===id)closeModal(id)}));
 
 $("#exportBtn").onclick=()=>{openModal("dataModal");$("#dataPreview").value=JSON.stringify(state,null,2)};
 $("#closeData").onclick=()=>closeModal("dataModal");
@@ -811,7 +409,7 @@ $("#statsBtn").onclick=()=>{
 $("#closeStats").onclick=()=>closeModal("statsModal");
 
 // keyboard helpers
-document.addEventListener("keydown",e=>{if(e.key==="Escape")["ocrModal","bulkModal","dataModal","statsModal"].forEach(closeModal)});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")["bulkModal","dataModal","statsModal"].forEach(closeModal)});
 
 save();render();
 </script>
